@@ -47,6 +47,11 @@ async function fetchInstancias(): Promise<Instancia[]> {
   return (data as unknown as InstanciaRow[]).map(mapRow);
 }
 
+export interface ResultadoCriacaoInstancia {
+  instancia: Instancia;
+  qrCodeBase64: string | null;
+}
+
 export function useInstancias() {
   const queryClient = useQueryClient();
 
@@ -56,22 +61,32 @@ export function useInstancias() {
   });
 
   const criarInstanciaMutation = useMutation({
-    mutationFn: async (nomeServico: string) => {
-      const { data, error } = await supabase.rpc("criar_instancia", {
-        p_nome_servico: nomeServico,
+    mutationFn: async (nomeServico: string): Promise<ResultadoCriacaoInstancia> => {
+      const { data, error } = await supabase.functions.invoke("criar-instancia", {
+        body: { nomeServico },
       });
+
       if (error) {
-        if (error.message.includes("NOME_DUPLICADO")) {
+        // supabase-js só expõe o corpo de erro da function via error.context;
+        // tentamos extrair a mensagem real (ex: NOME_DUPLICADO) de lá.
+        const corpo = await error.context?.json?.().catch(() => null);
+        const mensagem = corpo?.erro ?? error.message;
+        if (typeof mensagem === "string" && mensagem.includes("NOME_DUPLICADO")) {
           throw new NomeDuplicadoError(nomeServico.trim());
         }
-        throw error;
+        throw new Error(mensagem);
       }
-      return data as unknown as {
-        id: string;
-        nome_servico: string;
-        identificador_tecnico: string;
-        status_conexao: Instancia["statusConexao"];
-        criado_em: string;
+
+      if (data?.erro) {
+        if (typeof data.erro === "string" && data.erro.includes("NOME_DUPLICADO")) {
+          throw new NomeDuplicadoError(nomeServico.trim());
+        }
+        throw new Error(data.erro);
+      }
+
+      return {
+        instancia: mapRow({ ...data.instancia, configuracoes_ia: null }),
+        qrCodeBase64: data.evolution?.qrcode?.base64 ?? null,
       };
     },
     onSuccess: () => {
@@ -101,9 +116,8 @@ export function useInstancias() {
   });
 
   const criarInstancia = useCallback(
-    async (nomeServico: string): Promise<Instancia> => {
-      const row = await criarInstanciaMutation.mutateAsync(nomeServico);
-      return mapRow({ ...row, configuracoes_ia: null });
+    async (nomeServico: string): Promise<ResultadoCriacaoInstancia> => {
+      return criarInstanciaMutation.mutateAsync(nomeServico);
     },
     [criarInstanciaMutation]
   );

@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useInstancias } from "../../../lib/useInstancias";
 import type { Instancia } from "../../../types/instancia";
 import { CriarInstanciaModal } from "./CriarInstanciaModal";
-import { PareamentoPlaceholder } from "./PareamentoPlaceholder";
+import { PareamentoQrCode } from "./PareamentoQrCode";
 import { ConfiguracaoIAModal } from "./ConfiguracaoIAModal";
 
 const rotuloStatus: Record<Instancia["statusConexao"], string> = {
@@ -15,19 +15,22 @@ export function InstanciasPage() {
   const { instancias, carregando, erro, criarInstancia, editarConfiguracaoIA } = useInstancias();
   const [modalCriarAberto, setModalCriarAberto] = useState(false);
   const [instanciaRecemCriada, setInstanciaRecemCriada] = useState<Instancia | null>(null);
+  const [qrCodeRecente, setQrCodeRecente] = useState<string | null>(null);
   const [instanciaEmEdicao, setInstanciaEmEdicao] = useState<Instancia | null>(null);
 
   async function handleCriar(nomeServico: string) {
-    const nova = await criarInstancia(nomeServico);
+    const { instancia, qrCodeBase64 } = await criarInstancia(nomeServico);
     setModalCriarAberto(false);
-    setInstanciaRecemCriada(nova);
+    setInstanciaRecemCriada(instancia);
+    setQrCodeRecente(qrCodeBase64);
   }
 
   if (instanciaRecemCriada) {
     return (
       <div className="p-8">
-        <PareamentoPlaceholder
+        <PareamentoQrCode
           instancia={instanciaRecemCriada}
+          qrCodeBase64={qrCodeRecente}
           onVoltar={() => setInstanciaRecemCriada(null)}
         />
       </div>

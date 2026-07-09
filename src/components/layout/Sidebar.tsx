@@ -7,8 +7,11 @@ export function Sidebar() {
 
   return (
     <aside className="w-64 shrink-0 border-r border-brand-border bg-brand-surface h-screen p-4 flex flex-col">
-      <div className="mb-6 px-2 text-lg font-semibold tracking-wide">
-        <span className="text-brand-accent">AB</span>LAW IA
+      <div className="mb-6 px-2">
+        <div className="text-lg font-semibold tracking-wide">
+          <span className="text-brand-accent">AB</span>LAW IA
+        </div>
+        <div className="text-[11px] text-brand-muted tracking-wide mt-0.5">Bem-vindo ao futuro!</div>
       </div>
       <nav className="flex flex-col gap-1 flex-1">
         <div className="px-2 pt-2 pb-1 text-xs font-medium uppercase tracking-widest text-brand-muted">

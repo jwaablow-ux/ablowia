@@ -25,46 +25,72 @@ export function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-brand-bg">
-      <form
-        onSubmit={handleSubmit}
-        className="bg-brand-surface border border-brand-border rounded-lg w-full max-w-sm p-8"
-      >
-        <div className="text-lg font-semibold tracking-wide mb-6">
-          <span className="text-brand-accent">AB</span>LAW IA
+    <div className="min-h-screen flex bg-brand-bg">
+      <div className="hidden lg:flex flex-1 flex-col justify-center px-16 relative overflow-hidden border-r border-brand-border">
+        <div
+          className="absolute inset-0 opacity-40"
+          style={{
+            background:
+              "radial-gradient(circle at 20% 20%, rgba(63,198,212,0.25), transparent 55%)",
+          }}
+        />
+        <div className="relative">
+          <div className="text-2xl font-semibold tracking-wide mb-6">
+            <span className="text-brand-accent">AB</span>LAW IA
+          </div>
+          <h1 className="text-5xl font-bold leading-tight mb-4">
+            Bem-vindo ao <span className="text-brand-accent">futuro</span>!
+          </h1>
+          <p className="text-brand-muted text-base max-w-md">
+            Atendimento jurídico trabalhista com inteligência artificial, direto no WhatsApp.
+          </p>
         </div>
-        <label className="block text-sm font-medium mb-1" htmlFor="email">
-          E-mail
-        </label>
-        <input
-          id="email"
-          type="email"
-          autoFocus
-          required
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          className="w-full rounded-md border border-brand-border bg-brand-bg px-3 py-2 text-sm mb-4 focus:outline-none focus:border-brand-accent"
-        />
-        <label className="block text-sm font-medium mb-1" htmlFor="senha">
-          Senha
-        </label>
-        <input
-          id="senha"
-          type="password"
-          required
-          value={senha}
-          onChange={(e) => setSenha(e.target.value)}
-          className="w-full rounded-md border border-brand-border bg-brand-bg px-3 py-2 text-sm mb-1 focus:outline-none focus:border-brand-accent"
-        />
-        {erro && <p className="text-sm text-red-400 mb-2">{erro}</p>}
-        <button
-          type="submit"
-          disabled={enviando}
-          className="w-full mt-4 px-3 py-2 text-sm rounded-md bg-brand-accent text-brand-bg font-semibold hover:bg-brand-accent-hover disabled:opacity-60"
+      </div>
+
+      <div className="flex-1 flex items-center justify-center px-6">
+        <form
+          onSubmit={handleSubmit}
+          className="bg-brand-surface border border-brand-border rounded-lg w-full max-w-sm p-8"
         >
-          {enviando ? "Entrando..." : "Entrar"}
-        </button>
-      </form>
+          <div className="text-lg font-semibold tracking-wide mb-1 lg:hidden">
+            <span className="text-brand-accent">AB</span>LAW IA
+          </div>
+          <p className="text-sm text-brand-muted mb-6 lg:hidden">Bem-vindo ao futuro!</p>
+          <h2 className="text-lg font-semibold mb-6 hidden lg:block">Entrar</h2>
+
+          <label className="block text-sm font-medium mb-1" htmlFor="email">
+            E-mail
+          </label>
+          <input
+            id="email"
+            type="email"
+            autoFocus
+            required
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            className="w-full rounded-md border border-brand-border bg-brand-bg px-3 py-2 text-sm mb-4 focus:outline-none focus:border-brand-accent"
+          />
+          <label className="block text-sm font-medium mb-1" htmlFor="senha">
+            Senha
+          </label>
+          <input
+            id="senha"
+            type="password"
+            required
+            value={senha}
+            onChange={(e) => setSenha(e.target.value)}
+            className="w-full rounded-md border border-brand-border bg-brand-bg px-3 py-2 text-sm mb-1 focus:outline-none focus:border-brand-accent"
+          />
+          {erro && <p className="text-sm text-red-400 mb-2">{erro}</p>}
+          <button
+            type="submit"
+            disabled={enviando}
+            className="w-full mt-4 px-3 py-2 text-sm rounded-md bg-brand-accent text-brand-bg font-semibold hover:bg-brand-accent-hover disabled:opacity-60"
+          >
+            {enviando ? "Entrando..." : "Entrar"}
+          </button>
+        </form>
+      </div>
     </div>
   );
 }

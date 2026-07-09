@@ -15,6 +15,12 @@ dist-ssr
 .env.*
 !.env.example
 
+# Supabase CLI local state
+supabase/.temp/
+
+# Tarefas agendadas locais
+.claude/scheduled_tasks.lock
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
