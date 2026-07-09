@@ -12,13 +12,13 @@ const rotuloStatus: Record<Instancia["statusConexao"], string> = {
 };
 
 export function InstanciasPage() {
-  const { instancias, criarInstancia, editarConfiguracaoIA } = useInstancias();
+  const { instancias, carregando, erro, criarInstancia, editarConfiguracaoIA } = useInstancias();
   const [modalCriarAberto, setModalCriarAberto] = useState(false);
   const [instanciaRecemCriada, setInstanciaRecemCriada] = useState<Instancia | null>(null);
   const [instanciaEmEdicao, setInstanciaEmEdicao] = useState<Instancia | null>(null);
 
-  function handleCriar(nomeServico: string) {
-    const nova = criarInstancia(nomeServico);
+  async function handleCriar(nomeServico: string) {
+    const nova = await criarInstancia(nomeServico);
     setModalCriarAberto(false);
     setInstanciaRecemCriada(nova);
   }
@@ -49,7 +49,15 @@ export function InstanciasPage() {
         Cada área de atuação jurídica tem sua própria instância de WhatsApp e configuração de IA independente.
       </p>
 
-      {instancias.length === 0 ? (
+      {carregando ? (
+        <div className="border border-dashed border-brand-border rounded-lg p-10 text-center text-sm text-brand-muted">
+          Carregando instâncias...
+        </div>
+      ) : erro ? (
+        <div className="border border-red-900 bg-red-950/30 rounded-lg p-6 text-sm text-red-300">
+          Não foi possível carregar as instâncias: {erro instanceof Error ? erro.message : "erro desconhecido"}
+        </div>
+      ) : instancias.length === 0 ? (
         <div className="border border-dashed border-brand-border rounded-lg p-10 text-center text-sm text-brand-muted">
           Nenhuma instância criada ainda.
         </div>

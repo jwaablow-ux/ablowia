@@ -3,28 +3,33 @@ import { NomeDuplicadoError } from "../../../lib/useInstancias";
 
 interface CriarInstanciaModalProps {
   onFechar: () => void;
-  onCriar: (nomeServico: string) => void;
+  onCriar: (nomeServico: string) => Promise<void>;
 }
 
 export function CriarInstanciaModal({ onFechar, onCriar }: CriarInstanciaModalProps) {
   const [nomeServico, setNomeServico] = useState("");
   const [erro, setErro] = useState<string | null>(null);
+  const [enviando, setEnviando] = useState(false);
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     const nome = nomeServico.trim();
     if (!nome) {
       setErro("Informe o nome do serviço.");
       return;
     }
+    setEnviando(true);
     try {
-      onCriar(nome);
+      await onCriar(nome);
     } catch (e) {
       if (e instanceof NomeDuplicadoError) {
         setErro(e.message);
         return;
       }
+      setErro("Não foi possível criar a instância. Tente novamente.");
       throw e;
+    } finally {
+      setEnviando(false);
     }
   }
 
@@ -62,9 +67,10 @@ export function CriarInstanciaModal({ onFechar, onCriar }: CriarInstanciaModalPr
             </button>
             <button
               type="submit"
-              className="px-3 py-2 text-sm rounded-md bg-brand-accent text-brand-bg font-semibold hover:bg-brand-accent-hover"
+              disabled={enviando}
+              className="px-3 py-2 text-sm rounded-md bg-brand-accent text-brand-bg font-semibold hover:bg-brand-accent-hover disabled:opacity-60"
             >
-              Criar
+              {enviando ? "Criando..." : "Criar"}
             </button>
           </div>
         </form>
