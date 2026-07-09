@@ -7,6 +7,7 @@ import { Sidebar } from "./components/layout/Sidebar";
 import { InstanciasPage } from "./routes/configuracoes/instancias/InstanciasPage";
 import { ConfigurarIAPage } from "./routes/configuracoes/configurar-ia/ConfigurarIAPage";
 import { UsuariosPage } from "./routes/configuracoes/usuarios/UsuariosPage";
+import { ModeloIAPage } from "./routes/configuracoes/modelo-ia/ModeloIAPage";
 import { DashboardPage } from "./routes/dashboard/DashboardPage";
 import { MetaAdsPage } from "./routes/campanhas/MetaAdsPage";
 import { GoogleAdsPage } from "./routes/campanhas/GoogleAdsPage";
@@ -48,6 +49,7 @@ function AreaAutenticada() {
             <Route path="/clientes" element={<ClientesPage />} />
             <Route path="/configuracoes/configurar-ia" element={<ConfigurarIAPage />} />
             <Route path="/configuracoes/usuarios" element={<UsuariosPage />} />
+            <Route path="/configuracoes/modelo-ia" element={<ModeloIAPage />} />
           </Routes>
         </main>
       </div>

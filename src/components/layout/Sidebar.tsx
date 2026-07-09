@@ -96,6 +96,9 @@ export function Sidebar({ aberta, onFechar }: SidebarProps) {
           <NavLink to="/configuracoes/usuarios" className={itemClasse}>
             Usuários
           </NavLink>
+          <NavLink to="/configuracoes/modelo-ia" className={itemClasse}>
+            Modelo de IA
+          </NavLink>
         </nav>
         <div className="px-2 pt-3 border-t border-brand-border">
           <InstallPwaButton />
