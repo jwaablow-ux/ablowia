@@ -4,9 +4,11 @@ import { AuthProvider } from "./lib/AuthProvider";
 import { RequireAuth } from "./components/auth/RequireAuth";
 import { Sidebar } from "./components/layout/Sidebar";
 import { InstanciasPage } from "./routes/configuracoes/instancias/InstanciasPage";
+import { ConfigurarIAPage } from "./routes/configuracoes/configurar-ia/ConfigurarIAPage";
 import { DashboardPage } from "./routes/dashboard/DashboardPage";
 import { MetaAdsPage } from "./routes/campanhas/MetaAdsPage";
 import { GoogleAdsPage } from "./routes/campanhas/GoogleAdsPage";
+import { GruposPage } from "./routes/grupos/GruposPage";
 import { LoginPage } from "./routes/login/LoginPage";
 
 const queryClient = new QueryClient();
@@ -20,7 +22,9 @@ function AreaAutenticada() {
           <Route path="/" element={<DashboardPage />} />
           <Route path="/campanhas/meta-ads" element={<MetaAdsPage />} />
           <Route path="/campanhas/google-ads" element={<GoogleAdsPage />} />
+          <Route path="/grupos" element={<GruposPage />} />
           <Route path="/configuracoes/instancias" element={<InstanciasPage />} />
+          <Route path="/configuracoes/configurar-ia" element={<ConfigurarIAPage />} />
         </Routes>
       </main>
     </div>

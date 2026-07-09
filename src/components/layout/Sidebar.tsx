@@ -45,10 +45,20 @@ export function Sidebar() {
         </NavLink>
 
         <div className="px-2 pt-4 pb-1 text-xs font-medium uppercase tracking-widest text-brand-muted">
+          Grupos
+        </div>
+        <NavLink to="/grupos" className={itemClasse}>
+          Gerenciamento de Grupos
+        </NavLink>
+
+        <div className="px-2 pt-4 pb-1 text-xs font-medium uppercase tracking-widest text-brand-muted">
           Configurações
         </div>
         <NavLink to="/configuracoes/instancias" className={itemClasse}>
           Instâncias
+        </NavLink>
+        <NavLink to="/configuracoes/configurar-ia" className={itemClasse}>
+          Configurar IA
         </NavLink>
       </nav>
       {user && (
