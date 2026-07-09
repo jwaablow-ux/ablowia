@@ -1,0 +1,28 @@
+@import "tailwindcss";
+
+/*
+  Paleta definitiva do Ablaw IA, extraída da logo oficial "AB LAW ADVOCACIA":
+  fundo azul-marinho escuro quase preto, destaque em ciano/turquesa, texto branco.
+  Vale para todo o projeto a partir daqui — não é mais um protótipo de escolha.
+*/
+@theme {
+  --color-brand-bg: #16151f;
+  --color-brand-surface: #1e1d2b;
+  --color-brand-surface-hover: #26253578;
+  --color-brand-border: #2f2e40;
+  --color-brand-accent: #3fc6d4;
+  --color-brand-accent-hover: #33a9b5;
+  --color-brand-text: #f5f5f7;
+  --color-brand-muted: #9a9ab3;
+}
+
+:root {
+  color-scheme: dark;
+}
+
+body {
+  margin: 0;
+  font-family: system-ui, "Segoe UI", Roboto, sans-serif;
+  background: var(--color-brand-bg);
+  color: var(--color-brand-text);
+}

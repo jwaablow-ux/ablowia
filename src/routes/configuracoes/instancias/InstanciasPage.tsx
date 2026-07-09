@@ -1,0 +1,104 @@
+import { useState } from "react";
+import { useInstancias } from "../../../lib/useInstancias";
+import type { Instancia } from "../../../types/instancia";
+import { CriarInstanciaModal } from "./CriarInstanciaModal";
+import { PareamentoPlaceholder } from "./PareamentoPlaceholder";
+import { ConfiguracaoIAModal } from "./ConfiguracaoIAModal";
+
+const rotuloStatus: Record<Instancia["statusConexao"], string> = {
+  aguardando_pareamento: "Aguardando pareamento",
+  conectado: "Conectado",
+  desconectado: "Desconectado",
+};
+
+export function InstanciasPage() {
+  const { instancias, criarInstancia, editarConfiguracaoIA } = useInstancias();
+  const [modalCriarAberto, setModalCriarAberto] = useState(false);
+  const [instanciaRecemCriada, setInstanciaRecemCriada] = useState<Instancia | null>(null);
+  const [instanciaEmEdicao, setInstanciaEmEdicao] = useState<Instancia | null>(null);
+
+  function handleCriar(nomeServico: string) {
+    const nova = criarInstancia(nomeServico);
+    setModalCriarAberto(false);
+    setInstanciaRecemCriada(nova);
+  }
+
+  if (instanciaRecemCriada) {
+    return (
+      <div className="p-8">
+        <PareamentoPlaceholder
+          instancia={instanciaRecemCriada}
+          onVoltar={() => setInstanciaRecemCriada(null)}
+        />
+      </div>
+    );
+  }
+
+  return (
+    <div className="p-8">
+      <div className="flex items-center justify-between mb-2">
+        <h1 className="text-xl font-semibold">Instâncias</h1>
+        <button
+          onClick={() => setModalCriarAberto(true)}
+          className="px-3 py-2 text-sm rounded-md bg-brand-accent text-brand-bg font-semibold hover:bg-brand-accent-hover"
+        >
+          + Criar Instância
+        </button>
+      </div>
+      <p className="text-sm text-brand-muted mb-6 max-w-xl">
+        Cada área de atuação jurídica tem sua própria instância de WhatsApp e configuração de IA independente.
+      </p>
+
+      {instancias.length === 0 ? (
+        <div className="border border-dashed border-brand-border rounded-lg p-10 text-center text-sm text-brand-muted">
+          Nenhuma instância criada ainda.
+        </div>
+      ) : (
+        <table className="w-full text-sm border border-brand-border rounded-lg overflow-hidden">
+          <thead className="bg-brand-surface text-left">
+            <tr>
+              <th className="px-4 py-2 font-medium">Nome do serviço</th>
+              <th className="px-4 py-2 font-medium">Identificador técnico</th>
+              <th className="px-4 py-2 font-medium">Status</th>
+              <th className="px-4 py-2 font-medium"></th>
+            </tr>
+          </thead>
+          <tbody>
+            {instancias.map((instancia) => (
+              <tr key={instancia.id} className="border-t border-brand-border">
+                <td className="px-4 py-2">{instancia.nomeServico}</td>
+                <td className="px-4 py-2">
+                  <code className="text-xs text-brand-accent">{instancia.identificadorTecnico}</code>
+                </td>
+                <td className="px-4 py-2">{rotuloStatus[instancia.statusConexao]}</td>
+                <td className="px-4 py-2 text-right">
+                  <button
+                    onClick={() => setInstanciaEmEdicao(instancia)}
+                    className="text-sm text-brand-accent underline"
+                  >
+                    Editar configuração de IA
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
+
+      {modalCriarAberto && (
+        <CriarInstanciaModal
+          onFechar={() => setModalCriarAberto(false)}
+          onCriar={handleCriar}
+        />
+      )}
+
+      {instanciaEmEdicao && (
+        <ConfiguracaoIAModal
+          instancia={instanciaEmEdicao}
+          onFechar={() => setInstanciaEmEdicao(null)}
+          onSalvar={editarConfiguracaoIA}
+        />
+      )}
+    </div>
+  );
+}
