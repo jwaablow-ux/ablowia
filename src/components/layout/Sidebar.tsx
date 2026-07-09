@@ -2,6 +2,22 @@ import { NavLink } from "react-router-dom";
 import { supabase } from "../../lib/supabaseClient";
 import { useAuth } from "../../lib/AuthProvider";
 
+function itemClasse({ isActive }: { isActive: boolean }) {
+  return `rounded-md px-3 py-2 text-sm font-medium ${
+    isActive
+      ? "bg-brand-accent/15 text-brand-accent border border-brand-accent/40"
+      : "text-brand-text/80 hover:bg-brand-surface-hover"
+  }`;
+}
+
+function subItemClasse({ isActive }: { isActive: boolean }) {
+  return `rounded-md px-3 py-1.5 text-sm ml-3 ${
+    isActive
+      ? "bg-brand-accent/15 text-brand-accent border border-brand-accent/40"
+      : "text-brand-text/70 hover:bg-brand-surface-hover"
+  }`;
+}
+
 export function Sidebar() {
   const { user } = useAuth();
 
@@ -14,19 +30,24 @@ export function Sidebar() {
         <div className="text-[11px] text-brand-muted tracking-wide mt-0.5">Bem-vindo ao futuro!</div>
       </div>
       <nav className="flex flex-col gap-1 flex-1">
-        <div className="px-2 pt-2 pb-1 text-xs font-medium uppercase tracking-widest text-brand-muted">
+        <NavLink to="/" end className={itemClasse}>
+          Dashboard
+        </NavLink>
+
+        <div className="px-2 pt-4 pb-1 text-xs font-medium uppercase tracking-widest text-brand-muted">
+          Campanhas
+        </div>
+        <NavLink to="/campanhas/meta-ads" className={subItemClasse}>
+          Meta Ads
+        </NavLink>
+        <NavLink to="/campanhas/google-ads" className={subItemClasse}>
+          Google Ads
+        </NavLink>
+
+        <div className="px-2 pt-4 pb-1 text-xs font-medium uppercase tracking-widest text-brand-muted">
           Configurações
         </div>
-        <NavLink
-          to="/configuracoes/instancias"
-          className={({ isActive }) =>
-            `rounded-md px-3 py-2 text-sm font-medium ${
-              isActive
-                ? "bg-brand-accent/15 text-brand-accent border border-brand-accent/40"
-                : "text-brand-text/80 hover:bg-brand-surface-hover"
-            }`
-          }
-        >
+        <NavLink to="/configuracoes/instancias" className={itemClasse}>
           Instâncias
         </NavLink>
       </nav>
