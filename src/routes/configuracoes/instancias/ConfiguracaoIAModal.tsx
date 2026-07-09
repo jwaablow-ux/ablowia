@@ -18,7 +18,7 @@ export function ConfiguracaoIAModal({ instancia, onFechar, onSalvar }: Configura
   }
 
   return (
-    <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
+    <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
       <div className="bg-brand-surface border border-brand-border rounded-lg shadow-xl w-full max-w-md p-6">
         <h2 className="text-lg font-semibold mb-1">
           Configuração de IA — {instancia.nomeServico}

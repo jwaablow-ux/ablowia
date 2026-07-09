@@ -30,7 +30,7 @@ export function InstanciasPage() {
 
   if (instanciaRecemCriada) {
     return (
-      <div className="p-8">
+      <div className="p-4 sm:p-6 lg:p-8">
         <PareamentoQrCode
           instancia={instanciaRecemCriada}
           qrCodeBase64={qrCodeRecente}
@@ -41,8 +41,8 @@ export function InstanciasPage() {
   }
 
   return (
-    <div className="p-8">
-      <div className="flex items-center justify-between mb-2">
+    <div className="p-4 sm:p-6 lg:p-8">
+      <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
         <h1 className="text-xl font-semibold">Instâncias</h1>
         <button
           onClick={() => setModalCriarAberto(true)}

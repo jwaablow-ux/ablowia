@@ -8,7 +8,7 @@ export function ConfigurarIAPage() {
   const [instanciaEmEdicao, setInstanciaEmEdicao] = useState<Instancia | null>(null);
 
   return (
-    <div className="p-8">
+    <div className="p-4 sm:p-6 lg:p-8">
       <h1 className="text-xl font-semibold mb-2">Configurar IA</h1>
       <p className="text-sm text-brand-muted mb-6 max-w-xl">
         Cada instância tem sua própria IA, configurada de forma independente. Crie uma instância em

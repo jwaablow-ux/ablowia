@@ -52,7 +52,7 @@ export function DashboardPage() {
   const aguardando = instancias.filter((i) => i.statusConexao === "aguardando_pareamento").length;
 
   return (
-    <div className="p-8">
+    <div className="p-4 sm:p-6 lg:p-8">
       <h1 className="text-2xl font-bold mb-1">Dashboard</h1>
       <p className="text-sm text-brand-muted mb-8 max-w-xl">
         Visão geral do Ablaw IA: instâncias, clientes, campanhas e atendimento por IA.
