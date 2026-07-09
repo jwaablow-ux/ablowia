@@ -4,6 +4,7 @@ import type { Instancia } from "../../../types/instancia";
 import { CriarInstanciaModal } from "./CriarInstanciaModal";
 import { PareamentoQrCode } from "./PareamentoQrCode";
 import { ConfiguracaoIAModal } from "./ConfiguracaoIAModal";
+import { ExcluirInstanciaModal } from "./ExcluirInstanciaModal";
 
 const rotuloStatus: Record<Instancia["statusConexao"], string> = {
   aguardando_pareamento: "Aguardando pareamento",
@@ -12,11 +13,13 @@ const rotuloStatus: Record<Instancia["statusConexao"], string> = {
 };
 
 export function InstanciasPage() {
-  const { instancias, carregando, erro, criarInstancia, editarConfiguracaoIA } = useInstancias();
+  const { instancias, carregando, erro, criarInstancia, editarConfiguracaoIA, excluirInstancia } =
+    useInstancias();
   const [modalCriarAberto, setModalCriarAberto] = useState(false);
   const [instanciaRecemCriada, setInstanciaRecemCriada] = useState<Instancia | null>(null);
   const [qrCodeRecente, setQrCodeRecente] = useState<string | null>(null);
   const [instanciaEmEdicao, setInstanciaEmEdicao] = useState<Instancia | null>(null);
+  const [instanciaParaExcluir, setInstanciaParaExcluir] = useState<Instancia | null>(null);
 
   async function handleCriar(nomeServico: string) {
     const { instancia, qrCodeBase64 } = await criarInstancia(nomeServico);
@@ -65,35 +68,43 @@ export function InstanciasPage() {
           Nenhuma instância criada ainda.
         </div>
       ) : (
-        <table className="w-full text-sm border border-brand-border rounded-lg overflow-hidden">
-          <thead className="bg-brand-surface text-left">
-            <tr>
-              <th className="px-4 py-2 font-medium">Nome do serviço</th>
-              <th className="px-4 py-2 font-medium">Identificador técnico</th>
-              <th className="px-4 py-2 font-medium">Status</th>
-              <th className="px-4 py-2 font-medium"></th>
-            </tr>
-          </thead>
-          <tbody>
-            {instancias.map((instancia) => (
-              <tr key={instancia.id} className="border-t border-brand-border">
-                <td className="px-4 py-2">{instancia.nomeServico}</td>
-                <td className="px-4 py-2">
-                  <code className="text-xs text-brand-accent">{instancia.identificadorTecnico}</code>
-                </td>
-                <td className="px-4 py-2">{rotuloStatus[instancia.statusConexao]}</td>
-                <td className="px-4 py-2 text-right">
-                  <button
-                    onClick={() => setInstanciaEmEdicao(instancia)}
-                    className="text-sm text-brand-accent underline"
-                  >
-                    Editar configuração de IA
-                  </button>
-                </td>
+        <div className="border border-brand-border rounded-lg overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead className="bg-brand-surface text-left">
+              <tr>
+                <th className="px-4 py-2 font-medium">Nome do serviço</th>
+                <th className="px-4 py-2 font-medium">Identificador técnico</th>
+                <th className="px-4 py-2 font-medium">Status</th>
+                <th className="px-4 py-2 font-medium"></th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {instancias.map((instancia) => (
+                <tr key={instancia.id} className="border-t border-brand-border">
+                  <td className="px-4 py-2">{instancia.nomeServico}</td>
+                  <td className="px-4 py-2">
+                    <code className="text-xs text-brand-accent">{instancia.identificadorTecnico}</code>
+                  </td>
+                  <td className="px-4 py-2">{rotuloStatus[instancia.statusConexao]}</td>
+                  <td className="px-4 py-2 text-right whitespace-nowrap">
+                    <button
+                      onClick={() => setInstanciaEmEdicao(instancia)}
+                      className="text-sm text-brand-accent underline mr-4"
+                    >
+                      Editar configuração de IA
+                    </button>
+                    <button
+                      onClick={() => setInstanciaParaExcluir(instancia)}
+                      className="text-sm text-red-400 underline"
+                    >
+                      Excluir
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       )}
 
       {modalCriarAberto && (
@@ -108,6 +119,17 @@ export function InstanciasPage() {
           instancia={instanciaEmEdicao}
           onFechar={() => setInstanciaEmEdicao(null)}
           onSalvar={editarConfiguracaoIA}
+        />
+      )}
+
+      {instanciaParaExcluir && (
+        <ExcluirInstanciaModal
+          instancia={instanciaParaExcluir}
+          onFechar={() => setInstanciaParaExcluir(null)}
+          onConfirmar={async (id) => {
+            await excluirInstancia(id);
+            setInstanciaParaExcluir(null);
+          }}
         />
       )}
     </div>

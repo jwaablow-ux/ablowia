@@ -129,11 +129,33 @@ export function useInstancias() {
     [editarConfiguracaoIAMutation]
   );
 
+  const excluirInstanciaMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { data, error } = await supabase.functions.invoke("excluir-instancia", {
+        body: { id },
+      });
+      if (error) {
+        const corpo = await error.context?.json?.().catch(() => null);
+        throw new Error(corpo?.erro ?? error.message);
+      }
+      if (data?.erro) throw new Error(data.erro);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["instancias"] });
+    },
+  });
+
+  const excluirInstancia = useCallback(
+    (id: string) => excluirInstanciaMutation.mutateAsync(id),
+    [excluirInstanciaMutation]
+  );
+
   return {
     instancias: query.data ?? [],
     carregando: query.isLoading,
     erro: query.error,
     criarInstancia,
     editarConfiguracaoIA,
+    excluirInstancia,
   };
 }
