@@ -1,21 +1,30 @@
-// Ablaw IA — Edge Function de criação de instância.
+// Ablaw IA — Edge Function de criação de instância (provedor GoZAP).
 //
-// Orquestra, num único fluxo, a varredura de instâncias existentes na Evolution
-// API (para nunca colidir nome de instância entre este e outros sistemas que
-// rodam no mesmo servidor Evolution, como o Magnus), a criação real da
-// instância de WhatsApp, e a criação atômica dos registros no banco (instância
-// + configuração de IA). Se a criação na Evolution falhar, nada é gravado no
-// banco. Se a gravação no banco falhar depois da Evolution ter criado a
-// instância, a instância é removida da Evolution para não deixar órfã.
+// O admin escolhe, por instância, o modo de conexão:
+// - "companion": QR code — o número já tem WhatsApp instalado num aparelho,
+//   que continua sendo o dono da conta. Quem gera/escaneia o QR depois é o
+//   usuário final, via link público (ver gozap-obter-qrcode).
+// - "mobile": SMS/ligação — o número é registrado direto na API, sem
+//   depender de nenhum celular físico manter o WhatsApp instalado. Exige
+//   telefone nesta etapa. Quem verifica o código depois é o usuário final,
+//   via link público (ver gozap-mobile-opcoes-verificacao,
+//   gozap-mobile-solicitar-codigo, gozap-mobile-verificar-codigo).
+//
+// Nos dois casos: grava o registro local (instância + configuração de IA,
+// via RPC criar_instancia) e registra as credenciais do GoZAP + o token de
+// pareamento público via RPC registrar_conexao_gozap. Se qualquer etapa
+// depois da criação no GoZAP falhar, a instância é removida do GoZAP para
+// não deixar órfã.
 
 import { createClient } from "jsr:@supabase/supabase-js@2";
 
-const EVOLUTION_API_URL = Deno.env.get("EVOLUTION_API_URL");
-const EVOLUTION_API_KEY = Deno.env.get("EVOLUTION_API_KEY");
+const GOZAP_API_URL = Deno.env.get("GOZAP_API_URL");
+const GOZAP_ADMIN_TOKEN = Deno.env.get("GOZAP_ADMIN_TOKEN");
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
 const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY");
 
 const PREFIXO_ABLAW = "ablaw-";
+const MODOS_VALIDOS = ["companion", "mobile"];
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -40,60 +49,61 @@ function slugify(nome: string): string {
   return slug || "servico";
 }
 
-async function buscarNomesExistentesNaEvolution(): Promise<Set<string>> {
-  const resposta = await fetch(`${EVOLUTION_API_URL}/instance/fetchInstances`, {
-    headers: { apikey: EVOLUTION_API_KEY! },
-  });
-  if (!resposta.ok) {
-    throw new Error(`EVOLUTION_INDISPONIVEL: falha ao consultar instâncias existentes (HTTP ${resposta.status})`);
-  }
-  const lista = await resposta.json();
-  const nomes = new Set<string>();
-  for (const item of Array.isArray(lista) ? lista : []) {
-    const nome = item?.name ?? item?.instanceName ?? item?.instance?.instanceName;
-    if (typeof nome === "string") nomes.add(nome.toLowerCase());
-  }
-  return nomes;
-}
-
-async function gerarIdentificadorSemColisao(nomeServico: string, nomesExistentes: Set<string>): Promise<string> {
+function gerarIdentificador(nomeServico: string): string {
   const slug = slugify(nomeServico);
-  for (let tentativa = 0; tentativa < 5; tentativa++) {
-    const sufixo = crypto.randomUUID().split("-")[0];
-    const candidato = `${PREFIXO_ABLAW}${slug}-${sufixo}`;
-    if (!nomesExistentes.has(candidato.toLowerCase())) {
-      return candidato;
-    }
-  }
-  throw new Error("COLISAO_PERSISTENTE: não foi possível gerar um identificador único após 5 tentativas");
+  const sufixo = crypto.randomUUID().split("-")[0];
+  return `${PREFIXO_ABLAW}${slug}-${sufixo}`;
 }
 
-async function criarInstanciaNaEvolution(identificador: string) {
-  const resposta = await fetch(`${EVOLUTION_API_URL}/instance/create`, {
+interface RespostaCriarGozap {
+  success: boolean;
+  token: string;
+  instance: {
+    id: string;
+    name: string;
+    status: string;
+    connection_mode: string;
+  };
+}
+
+function normalizarTelefone(telefone: string): string {
+  return telefone.replace(/\D/g, "");
+}
+
+async function criarInstanciaNoGozap(
+  identificador: string,
+  connectionMode: string,
+  telefone: string
+): Promise<RespostaCriarGozap> {
+  const body: Record<string, unknown> = {
+    name: identificador,
+    connection_mode: connectionMode,
+  };
+  if (connectionMode === "mobile") {
+    body.phone = telefone;
+  }
+
+  const resposta = await fetch(`${GOZAP_API_URL}/instance/create`, {
     method: "POST",
     headers: {
-      apikey: EVOLUTION_API_KEY!,
+      admintoken: GOZAP_ADMIN_TOKEN!,
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({
-      instanceName: identificador,
-      qrcode: true,
-      integration: "WHATSAPP-BAILEYS",
-    }),
+    body: JSON.stringify(body),
   });
   const corpo = await resposta.json().catch(() => null);
-  if (!resposta.ok) {
-    throw new Error(`EVOLUTION_CRIACAO_FALHOU: HTTP ${resposta.status} - ${JSON.stringify(corpo)}`);
+  if (!resposta.ok || !corpo?.success) {
+    throw new Error(`GOZAP_CRIACAO_FALHOU: HTTP ${resposta.status} - ${JSON.stringify(corpo)}`);
   }
-  return corpo;
+  return corpo as RespostaCriarGozap;
 }
 
-async function removerInstanciaNaEvolution(identificador: string) {
-  await fetch(`${EVOLUTION_API_URL}/instance/delete/${identificador}`, {
+async function removerInstanciaNoGozap(gozapToken: string) {
+  await fetch(`${GOZAP_API_URL}/instance`, {
     method: "DELETE",
-    headers: { apikey: EVOLUTION_API_KEY! },
+    headers: { token: gozapToken },
   }).catch(() => {
-    // Best-effort: se a limpeza falhar, a instância órfã na Evolution fica
+    // Best-effort: se a limpeza falhar, a instância órfã no GoZAP fica
     // registrada no log para remoção manual — não escondemos o erro original.
   });
 }
@@ -107,9 +117,9 @@ Deno.serve(async (req) => {
     return jsonResponse({ erro: "Método não permitido" }, 405);
   }
 
-  if (!EVOLUTION_API_URL || !EVOLUTION_API_KEY) {
+  if (!GOZAP_API_URL || !GOZAP_ADMIN_TOKEN) {
     return jsonResponse(
-      { erro: "EVOLUTION_NAO_CONFIGURADA: variáveis de ambiente da Evolution API ausentes" },
+      { erro: "GOZAP_NAO_CONFIGURADA: variáveis de ambiente do GoZAP ausentes" },
       500
     );
   }
@@ -129,9 +139,13 @@ Deno.serve(async (req) => {
   }
 
   let nomeServico: string;
+  let connectionMode: string;
+  let telefone: string;
   try {
     const corpo = await req.json();
     nomeServico = String(corpo?.nomeServico ?? "").trim();
+    connectionMode = String(corpo?.connectionMode ?? "").trim().toLowerCase();
+    telefone = normalizarTelefone(String(corpo?.telefone ?? ""));
   } catch {
     return jsonResponse({ erro: "Corpo da requisição inválido" }, 400);
   }
@@ -140,19 +154,24 @@ Deno.serve(async (req) => {
     return jsonResponse({ erro: "Nome do serviço não pode ser vazio" }, 400);
   }
 
-  let identificador: string;
-  try {
-    const nomesExistentes = await buscarNomesExistentesNaEvolution();
-    identificador = await gerarIdentificadorSemColisao(nomeServico, nomesExistentes);
-  } catch (e) {
-    return jsonResponse({ erro: e instanceof Error ? e.message : "Falha ao varrer instâncias existentes" }, 502);
+  if (!MODOS_VALIDOS.includes(connectionMode)) {
+    return jsonResponse({ erro: "Modo de conexão inválido. Use companion ou mobile." }, 400);
   }
 
-  let respostaEvolution: unknown;
+  if (connectionMode === "mobile" && telefone.length < 10) {
+    return jsonResponse(
+      { erro: "Telefone inválido. Informe com DDI, só números (ex.: 5511999999999)." },
+      400
+    );
+  }
+
+  const identificador = gerarIdentificador(nomeServico);
+
+  let respostaGozap: RespostaCriarGozap;
   try {
-    respostaEvolution = await criarInstanciaNaEvolution(identificador);
+    respostaGozap = await criarInstanciaNoGozap(identificador, connectionMode, telefone);
   } catch (e) {
-    return jsonResponse({ erro: e instanceof Error ? e.message : "Falha ao criar instância na Evolution" }, 502);
+    return jsonResponse({ erro: e instanceof Error ? e.message : "Falha ao criar instância no GoZAP" }, 502);
   }
 
   const { data: instancia, error: dbError } = await supabase
@@ -163,7 +182,7 @@ Deno.serve(async (req) => {
     .single();
 
   if (dbError) {
-    await removerInstanciaNaEvolution(identificador);
+    await removerInstanciaNoGozap(respostaGozap.token);
     const duplicado = dbError.message.includes("NOME_DUPLICADO");
     return jsonResponse(
       { erro: duplicado ? dbError.message : `Falha ao gravar instância no banco: ${dbError.message}` },
@@ -171,5 +190,27 @@ Deno.serve(async (req) => {
     );
   }
 
-  return jsonResponse({ instancia, evolution: respostaEvolution }, 201);
+  const { data: linkPareamentoToken, error: conexaoError } = await supabase.rpc("registrar_conexao_gozap", {
+    p_instancia_id: (instancia as { id: string }).id,
+    p_gozap_instance_id: respostaGozap.instance.id,
+    p_gozap_token: respostaGozap.token,
+    p_connection_mode: connectionMode,
+  });
+
+  if (conexaoError) {
+    await removerInstanciaNoGozap(respostaGozap.token);
+    await supabase.rpc("excluir_instancia", { p_id: (instancia as { id: string }).id });
+    return jsonResponse(
+      { erro: `Falha ao registrar credenciais de conexão: ${conexaoError.message}` },
+      500
+    );
+  }
+
+  return jsonResponse(
+    {
+      instancia,
+      linkPareamento: `/pareamento/${linkPareamentoToken}`,
+    },
+    201
+  );
 });

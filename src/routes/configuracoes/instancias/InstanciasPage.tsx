@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { useInstancias } from "../../../lib/useInstancias";
 import type { Instancia } from "../../../types/instancia";
-import { CriarInstanciaModal } from "./CriarInstanciaModal";
-import { PareamentoQrCode } from "./PareamentoQrCode";
+import { CriarInstanciaModal, type MetodoConexao } from "./CriarInstanciaModal";
+import { LinkPareamentoCriado } from "./LinkPareamentoCriado";
 import { ConfiguracaoIAModal } from "./ConfiguracaoIAModal";
 import { ExcluirInstanciaModal } from "./ExcluirInstanciaModal";
 
@@ -13,27 +13,45 @@ const rotuloStatus: Record<Instancia["statusConexao"], string> = {
 };
 
 export function InstanciasPage() {
-  const { instancias, carregando, erro, criarInstancia, editarConfiguracaoIA, excluirInstancia } =
-    useInstancias();
+  const {
+    instancias,
+    carregando,
+    erro,
+    criarInstancia,
+    editarConfiguracaoIA,
+    excluirInstancia,
+    obterLinkPareamento,
+  } = useInstancias();
   const [modalCriarAberto, setModalCriarAberto] = useState(false);
   const [instanciaRecemCriada, setInstanciaRecemCriada] = useState<Instancia | null>(null);
-  const [qrCodeRecente, setQrCodeRecente] = useState<string | null>(null);
+  const [linkPareamentoRecente, setLinkPareamentoRecente] = useState<string>("");
   const [instanciaEmEdicao, setInstanciaEmEdicao] = useState<Instancia | null>(null);
   const [instanciaParaExcluir, setInstanciaParaExcluir] = useState<Instancia | null>(null);
+  const [copiandoLinkId, setCopiandoLinkId] = useState<string | null>(null);
 
-  async function handleCriar(nomeServico: string) {
-    const { instancia, qrCodeBase64 } = await criarInstancia(nomeServico);
+  async function handleCriar(nomeServico: string, connectionMode: MetodoConexao, telefone: string) {
+    const { instancia, linkPareamento } = await criarInstancia(nomeServico, connectionMode, telefone);
     setModalCriarAberto(false);
     setInstanciaRecemCriada(instancia);
-    setQrCodeRecente(qrCodeBase64);
+    setLinkPareamentoRecente(linkPareamento);
+  }
+
+  async function handleCopiarLinkExistente(id: string) {
+    setCopiandoLinkId(id);
+    try {
+      const link = await obterLinkPareamento(id);
+      await navigator.clipboard.writeText(`${window.location.origin}${link}`);
+    } finally {
+      setCopiandoLinkId(null);
+    }
   }
 
   if (instanciaRecemCriada) {
     return (
       <div className="p-4 sm:p-6 lg:p-8">
-        <PareamentoQrCode
+        <LinkPareamentoCriado
           instancia={instanciaRecemCriada}
-          qrCodeBase64={qrCodeRecente}
+          linkPareamento={linkPareamentoRecente}
           onVoltar={() => setInstanciaRecemCriada(null)}
         />
       </div>
@@ -87,6 +105,13 @@ export function InstanciasPage() {
                   </td>
                   <td className="px-4 py-2">{rotuloStatus[instancia.statusConexao]}</td>
                   <td className="px-4 py-2 text-right whitespace-nowrap">
+                    <button
+                      onClick={() => handleCopiarLinkExistente(instancia.id)}
+                      disabled={copiandoLinkId === instancia.id}
+                      className="text-sm text-brand-accent underline mr-4 disabled:opacity-60"
+                    >
+                      {copiandoLinkId === instancia.id ? "Copiando..." : "Copiar link de pareamento"}
+                    </button>
                     <button
                       onClick={() => setInstanciaEmEdicao(instancia)}
                       className="text-sm text-brand-accent underline mr-4"

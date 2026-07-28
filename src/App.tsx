@@ -14,6 +14,7 @@ import { GoogleAdsPage } from "./routes/campanhas/GoogleAdsPage";
 import { GruposPage } from "./routes/grupos/GruposPage";
 import { ClientesPage } from "./routes/clientes/ClientesPage";
 import { LoginPage } from "./routes/login/LoginPage";
+import { PareamentoPublicoPage } from "./routes/pareamento/PareamentoPublicoPage";
 
 const queryClient = new QueryClient();
 
@@ -63,6 +64,7 @@ function App() {
       <AuthProvider>
         <Routes>
           <Route path="/login" element={<LoginPage />} />
+          <Route path="/pareamento/:token" element={<PareamentoPublicoPage />} />
           <Route
             path="/*"
             element={

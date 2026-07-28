@@ -1,15 +1,14 @@
-// Ablaw IA — Edge Function de exclusão de instância.
+// Ablaw IA — Edge Function de exclusão de instância (provedor GoZAP).
 //
-// Remove a instância real na Evolution API e, em seguida, o registro no banco
-// (instância + configuração de IA, via cascade). Se a Evolution retornar um
-// erro que não seja "instância não encontrada", a exclusão é abortada e nada
-// é removido do banco — para nunca deixar o painel dizendo que a instância
-// sumiu enquanto ela ainda existe de verdade na Evolution.
+// Remove a instância real no GoZAP e, em seguida, o registro no banco
+// (instância + configuração de IA + credenciais de conexão, via cascade). Se
+// o GoZAP retornar um erro, a exclusão é abortada e nada é removido do banco
+// — para nunca deixar o painel dizendo que a instância sumiu enquanto ela
+// ainda existe de verdade no GoZAP.
 
 import { createClient } from "jsr:@supabase/supabase-js@2";
 
-const EVOLUTION_API_URL = Deno.env.get("EVOLUTION_API_URL");
-const EVOLUTION_API_KEY = Deno.env.get("EVOLUTION_API_KEY");
+const GOZAP_API_URL = Deno.env.get("GOZAP_API_URL");
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
 const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY");
 
@@ -35,9 +34,9 @@ Deno.serve(async (req) => {
     return jsonResponse({ erro: "Método não permitido" }, 405);
   }
 
-  if (!EVOLUTION_API_URL || !EVOLUTION_API_KEY) {
+  if (!GOZAP_API_URL) {
     return jsonResponse(
-      { erro: "EVOLUTION_NAO_CONFIGURADA: variáveis de ambiente da Evolution API ausentes" },
+      { erro: "GOZAP_NAO_CONFIGURADA: variáveis de ambiente do GoZAP ausentes" },
       500
     );
   }
@@ -68,25 +67,25 @@ Deno.serve(async (req) => {
     return jsonResponse({ erro: "Id da instância não informado" }, 400);
   }
 
-  const { data: instancia, error: buscaError } = await supabase
-    .from("instancias")
-    .select("id, identificador_tecnico")
-    .eq("id", id)
+  const { data: credenciais, error: credenciaisError } = await supabase
+    .rpc("obter_credenciais_gozap", { p_instancia_id: id })
     .single();
 
-  if (buscaError || !instancia) {
-    return jsonResponse({ erro: "Instância não encontrada" }, 404);
+  if (credenciaisError || !credenciais) {
+    return jsonResponse({ erro: "Instância não encontrada ou sem credenciais de conexão" }, 404);
   }
 
-  const respostaEvolution = await fetch(
-    `${EVOLUTION_API_URL}/instance/delete/${instancia.identificador_tecnico}`,
-    { method: "DELETE", headers: { apikey: EVOLUTION_API_KEY } }
-  );
+  const { gozap_token: gozapToken } = credenciais as { gozap_token: string };
 
-  if (!respostaEvolution.ok && respostaEvolution.status !== 404) {
-    const corpo = await respostaEvolution.json().catch(() => null);
+  const respostaGozap = await fetch(`${GOZAP_API_URL}/instance`, {
+    method: "DELETE",
+    headers: { token: gozapToken },
+  });
+
+  if (!respostaGozap.ok && respostaGozap.status !== 401) {
+    const corpo = await respostaGozap.json().catch(() => null);
     return jsonResponse(
-      { erro: `EVOLUTION_EXCLUSAO_FALHOU: HTTP ${respostaEvolution.status} - ${JSON.stringify(corpo)}` },
+      { erro: `GOZAP_EXCLUSAO_FALHOU: HTTP ${respostaGozap.status} - ${JSON.stringify(corpo)}` },
       502
     );
   }

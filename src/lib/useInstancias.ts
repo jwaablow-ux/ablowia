@@ -2,6 +2,7 @@ import { useCallback } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "./supabaseClient";
 import type { Instancia } from "../types/instancia";
+import type { MetodoConexao } from "../routes/configuracoes/instancias/CriarInstanciaModal";
 
 export class NomeDuplicadoError extends Error {
   constructor(nomeServico: string) {
@@ -49,7 +50,7 @@ async function fetchInstancias(): Promise<Instancia[]> {
 
 export interface ResultadoCriacaoInstancia {
   instancia: Instancia;
-  qrCodeBase64: string | null;
+  linkPareamento: string;
 }
 
 export function useInstancias() {
@@ -61,9 +62,17 @@ export function useInstancias() {
   });
 
   const criarInstanciaMutation = useMutation({
-    mutationFn: async (nomeServico: string): Promise<ResultadoCriacaoInstancia> => {
+    mutationFn: async ({
+      nomeServico,
+      connectionMode,
+      telefone,
+    }: {
+      nomeServico: string;
+      connectionMode: MetodoConexao;
+      telefone: string;
+    }): Promise<ResultadoCriacaoInstancia> => {
       const { data, error } = await supabase.functions.invoke("criar-instancia", {
-        body: { nomeServico },
+        body: { nomeServico, connectionMode, telefone },
       });
 
       if (error) {
@@ -86,13 +95,27 @@ export function useInstancias() {
 
       return {
         instancia: mapRow({ ...data.instancia, configuracoes_ia: null }),
-        qrCodeBase64: data.evolution?.qrcode?.base64 ?? null,
+        linkPareamento: data.linkPareamento as string,
       };
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["instancias"] });
     },
   });
+
+  const obterLinkPareamentoMutation = useMutation({
+    mutationFn: async (id: string): Promise<string> => {
+      const { data, error } = await supabase.rpc("obter_link_pareamento", { p_instancia_id: id });
+      if (error) throw error;
+      if (!data) throw new Error("Esta instância ainda não tem link de pareamento registrado.");
+      return `/pareamento/${data}`;
+    },
+  });
+
+  const obterLinkPareamento = useCallback(
+    (id: string) => obterLinkPareamentoMutation.mutateAsync(id),
+    [obterLinkPareamentoMutation]
+  );
 
   const editarConfiguracaoIAMutation = useMutation({
     mutationFn: async ({
@@ -116,8 +139,12 @@ export function useInstancias() {
   });
 
   const criarInstancia = useCallback(
-    async (nomeServico: string): Promise<ResultadoCriacaoInstancia> => {
-      return criarInstanciaMutation.mutateAsync(nomeServico);
+    async (
+      nomeServico: string,
+      connectionMode: MetodoConexao,
+      telefone: string
+    ): Promise<ResultadoCriacaoInstancia> => {
+      return criarInstanciaMutation.mutateAsync({ nomeServico, connectionMode, telefone });
     },
     [criarInstanciaMutation]
   );
@@ -157,5 +184,6 @@ export function useInstancias() {
     criarInstancia,
     editarConfiguracaoIA,
     excluirInstancia,
+    obterLinkPareamento,
   };
 }
