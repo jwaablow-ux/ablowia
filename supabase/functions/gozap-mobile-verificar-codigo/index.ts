@@ -7,6 +7,7 @@
 // esperar o próximo polling de status).
 
 import { createClient } from "jsr:@supabase/supabase-js@2";
+import { interpretarErroGozap } from "../_shared/gozap-erros.ts";
 
 const GOZAP_API_URL = Deno.env.get("GOZAP_API_URL");
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
@@ -91,10 +92,14 @@ Deno.serve(async (req) => {
   }
 
   if (!resposta.ok || !corpo?.success) {
-    return jsonResponse(
-      { erro: `GOZAP_VERIFICACAO_FALHOU: HTTP ${resposta.status} - ${JSON.stringify(corpo)}` },
-      502
-    );
+    if (resposta.status === 409) {
+      return jsonResponse(
+        { erro: "Código incorreto ou expirado. Confira o código recebido e tente novamente." },
+        409
+      );
+    }
+    const { mensagem, retryAfterSegundos } = interpretarErroGozap(corpo, resposta.status);
+    return jsonResponse({ erro: mensagem, retryAfterSegundos }, 502);
   }
 
   const conectado = corpo.instance?.status === "connected";

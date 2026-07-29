@@ -4,6 +4,7 @@
 // verificação pelo método escolhido pelo usuário final (sms, call ou email).
 
 import { createClient } from "jsr:@supabase/supabase-js@2";
+import { interpretarErroGozap } from "../_shared/gozap-erros.ts";
 
 const GOZAP_API_URL = Deno.env.get("GOZAP_API_URL");
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
@@ -78,10 +79,8 @@ Deno.serve(async (req) => {
 
   const corpo = await resposta.json().catch(() => null);
   if (!resposta.ok || !corpo?.success) {
-    return jsonResponse(
-      { erro: `GOZAP_SOLICITACAO_FALHOU: HTTP ${resposta.status} - ${JSON.stringify(corpo)}` },
-      502
-    );
+    const { mensagem, retryAfterSegundos } = interpretarErroGozap(corpo, resposta.status);
+    return jsonResponse({ erro: mensagem, retryAfterSegundos }, 502);
   }
 
   return jsonResponse(

@@ -34,7 +34,16 @@ export function PareamentoPublicoPage() {
   const [codigo, setCodigo] = useState("");
   const [mensagemErro, setMensagemErro] = useState<string | null>(null);
   const [enviando, setEnviando] = useState(false);
+  const [esperaSegundos, setEsperaSegundos] = useState(0);
   const intervaloRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  useEffect(() => {
+    if (esperaSegundos <= 0) return;
+    const id = setInterval(() => {
+      setEsperaSegundos((s) => Math.max(0, s - 1));
+    }, 1000);
+    return () => clearInterval(id);
+  }, [esperaSegundos > 0]);
 
   useEffect(() => {
     if (!token) {
@@ -76,7 +85,7 @@ export function PareamentoPublicoPage() {
 
       if (error || data?.erro) {
         const corpo = await error?.context?.json?.().catch(() => null);
-        setMensagemErro(corpo?.erro ?? data?.erro ?? error?.message ?? "Falha ao gerar QR code.");
+        setMensagemErro(corpo?.erro ?? data?.erro ?? "Não foi possível gerar o QR code. Atualize a página para tentar de novo.");
         setEtapa("erro");
         return;
       }
@@ -106,7 +115,7 @@ export function PareamentoPublicoPage() {
 
       if (error) {
         const corpo = await error.context?.json?.().catch(() => null);
-        setMensagemErro(corpo?.erro ?? error.message);
+        setMensagemErro(corpo?.erro ?? "Não foi possível carregar as opções de verificação. Atualize a página para tentar de novo.");
         setEtapa("erro");
         return;
       }
@@ -140,11 +149,13 @@ export function PareamentoPublicoPage() {
 
     if (error) {
       const corpo = await error.context?.json?.().catch(() => null);
-      setMensagemErro(corpo?.erro ?? error.message);
+      setMensagemErro(corpo?.erro ?? "Não foi possível solicitar o código. Tente novamente.");
+      if (typeof corpo?.retryAfterSegundos === "number") setEsperaSegundos(corpo.retryAfterSegundos);
       return;
     }
     if (data?.erro) {
       setMensagemErro(data.erro);
+      if (typeof data.retryAfterSegundos === "number") setEsperaSegundos(data.retryAfterSegundos);
       return;
     }
 
@@ -163,7 +174,7 @@ export function PareamentoPublicoPage() {
 
     if (error) {
       const corpo = await error.context?.json?.().catch(() => null);
-      setMensagemErro(corpo?.erro ?? error.message);
+      setMensagemErro(corpo?.erro ?? "Não foi possível confirmar o código. Tente novamente.");
       return;
     }
     if (data?.erro) {
@@ -231,13 +242,24 @@ export function PareamentoPublicoPage() {
             </p>
             <div className="flex flex-col gap-2 mb-2">
               {metodos.length === 0 && (
-                <p className="text-sm text-brand-muted">Nenhum método de verificação disponível no momento.</p>
+                <div className="text-sm text-brand-muted">
+                  <p className="mb-3">
+                    Nenhum método de verificação está liberado pra esse número neste momento — geralmente é
+                    temporário. Aguarde alguns minutos e tente de novo.
+                  </p>
+                  <button
+                    onClick={() => window.location.reload()}
+                    className="px-3 py-2 text-sm rounded-md bg-brand-accent text-brand-bg font-semibold hover:bg-brand-accent-hover"
+                  >
+                    Tentar de novo
+                  </button>
+                </div>
               )}
               {metodos.map((metodo) => (
                 <button
                   key={metodo.id}
                   onClick={() => solicitarCodigo(metodo.id)}
-                  disabled={enviando}
+                  disabled={enviando || esperaSegundos > 0}
                   className="px-3 py-2 text-sm rounded-md bg-brand-accent text-brand-bg font-semibold hover:bg-brand-accent-hover disabled:opacity-60"
                 >
                   {enviando ? "Enviando..." : `Receber código por ${metodo.label}`}
@@ -245,6 +267,12 @@ export function PareamentoPublicoPage() {
               ))}
             </div>
             {mensagemErro && <p className="text-sm text-red-400 mt-2">{mensagemErro}</p>}
+            {esperaSegundos > 0 && (
+              <p className="text-xs text-brand-muted mt-1">
+                Você poderá tentar de novo em {Math.floor(esperaSegundos / 60)}:
+                {String(esperaSegundos % 60).padStart(2, "0")}.
+              </p>
+            )}
           </>
         )}
 
