@@ -20,7 +20,7 @@ Este documento registra, de forma PERMANENTE, as regras absolutas deste projeto.
 
 4. DISCIPLINA DE DEPLOY E TESTE:
    - Metodologia de bancada obrigatória para qualquer alteração visual/PDF: criar versão isolada de teste, testar com dado real, só aplicar em produção após minha aprovação visual explícita.
-   - Deploy só acontece após minha confirmação explícita — nunca deploy automático "porque parecia pronto".
+   - Regra atualizada (confirmada em 29/07/2026): deploy acontece automaticamente (commit + push + deploy em produção) sempre que uma tarefa for concluída e testada, sem precisar perguntar a cada vez — vale como confirmação permanente, não pontual. Isso não dispensa mostrar evidência real do teste antes de declarar a tarefa concluída.
    - Sempre mostrar evidência real (screenshot, log, resultado de query) ANTES de declarar qualquer tarefa concluída.
    - Ao trabalhar com múltiplos fornecedores de dados/API no futuro, manter o roteamento sincronizado entre TODOS os canais (WhatsApp, painel web, dashboard).
    - Nenhum fornecedor de API deve falhar silenciosamente pro cliente — sempre entregar resposta honesta sobre o que aconteceu.

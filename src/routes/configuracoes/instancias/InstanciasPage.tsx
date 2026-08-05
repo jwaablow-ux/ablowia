@@ -1,8 +1,10 @@
 import { useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { useInstancias } from "../../../lib/useInstancias";
 import type { Instancia } from "../../../types/instancia";
 import { CriarInstanciaModal, type MetodoConexao } from "./CriarInstanciaModal";
 import { LinkPareamentoCriado } from "./LinkPareamentoCriado";
+import { QrConexaoInline } from "./QrConexaoInline";
 import { ConfiguracaoIAModal } from "./ConfiguracaoIAModal";
 import { ExcluirInstanciaModal } from "./ExcluirInstanciaModal";
 
@@ -22,8 +24,10 @@ export function InstanciasPage() {
     excluirInstancia,
     obterLinkPareamento,
   } = useInstancias();
+  const queryClient = useQueryClient();
   const [modalCriarAberto, setModalCriarAberto] = useState(false);
   const [instanciaRecemCriada, setInstanciaRecemCriada] = useState<Instancia | null>(null);
+  const [connectionModeRecente, setConnectionModeRecente] = useState<MetodoConexao | null>(null);
   const [linkPareamentoRecente, setLinkPareamentoRecente] = useState<string>("");
   const [instanciaEmEdicao, setInstanciaEmEdicao] = useState<Instancia | null>(null);
   const [instanciaParaExcluir, setInstanciaParaExcluir] = useState<Instancia | null>(null);
@@ -33,7 +37,14 @@ export function InstanciasPage() {
     const { instancia, linkPareamento } = await criarInstancia(nomeServico, connectionMode, telefone);
     setModalCriarAberto(false);
     setInstanciaRecemCriada(instancia);
+    setConnectionModeRecente(connectionMode);
     setLinkPareamentoRecente(linkPareamento);
+  }
+
+  function fecharTelaRecemCriada() {
+    setInstanciaRecemCriada(null);
+    setConnectionModeRecente(null);
+    setLinkPareamentoRecente("");
   }
 
   async function handleCopiarLinkExistente(id: string) {
@@ -49,11 +60,23 @@ export function InstanciasPage() {
   if (instanciaRecemCriada) {
     return (
       <div className="p-4 sm:p-6 lg:p-8">
-        <LinkPareamentoCriado
-          instancia={instanciaRecemCriada}
-          linkPareamento={linkPareamentoRecente}
-          onVoltar={() => setInstanciaRecemCriada(null)}
-        />
+        {connectionModeRecente === "companion" ? (
+          <QrConexaoInline
+            instancia={instanciaRecemCriada}
+            linkPareamentoToken={linkPareamentoRecente.replace("/pareamento/", "")}
+            onConectado={() => {
+              queryClient.invalidateQueries({ queryKey: ["instancias"] });
+              fecharTelaRecemCriada();
+            }}
+            onCancelar={fecharTelaRecemCriada}
+          />
+        ) : (
+          <LinkPareamentoCriado
+            instancia={instanciaRecemCriada}
+            linkPareamento={linkPareamentoRecente}
+            onVoltar={fecharTelaRecemCriada}
+          />
+        )}
       </div>
     );
   }
