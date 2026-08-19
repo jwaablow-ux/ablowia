@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import QRCode from "qrcode";
 import { supabase } from "../../../lib/supabaseClient";
 import type { Instancia } from "../../../types/instancia";
 import { Confetti } from "../../../components/Confetti";
@@ -18,7 +19,7 @@ interface QrConexaoInlineProps {
 }
 
 export function QrConexaoInline({ instancia, linkPareamentoToken, onConectado, onCancelar }: QrConexaoInlineProps) {
-  const [qrCode, setQrCode] = useState<string | null>(null);
+  const [qrImagem, setQrImagem] = useState<string | null>(null);
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState<string | null>(null);
   const [conectado, setConectado] = useState(false);
@@ -31,20 +32,38 @@ export function QrConexaoInline({ instancia, linkPareamentoToken, onConectado, o
   const gerarQr = useCallback(async () => {
     setCarregando(true);
     setErro(null);
-    const { data, error } = await supabase.functions.invoke("gozap-obter-qrcode", {
+    const { data, error } = await supabase.functions.invoke("wasender-obter-qrcode", {
       body: { linkToken: linkPareamentoToken },
     });
     if (canceladoRef.current) return;
-    setCarregando(false);
 
     if (error || data?.erro) {
       const corpo = await error?.context?.json?.().catch(() => null);
+      setCarregando(false);
       setErro(corpo?.erro ?? data?.erro ?? "Não foi possível gerar o QR code.");
-      setQrCode(null);
+      setQrImagem(null);
       return;
     }
 
-    setQrCode(data.qrCode ?? null);
+    if (!data.qrCode) {
+      setCarregando(false);
+      setErro("A WaSender não devolveu um QR code. Atualize a página para tentar de novo.");
+      setQrImagem(null);
+      return;
+    }
+
+    try {
+      const dataUrl = await QRCode.toDataURL(data.qrCode, { margin: 1, width: 320 });
+      if (canceladoRef.current) return;
+      setQrImagem(dataUrl);
+    } catch {
+      if (canceladoRef.current) return;
+      setErro("Não foi possível desenhar o QR code recebido. Atualize a página para tentar de novo.");
+      setQrImagem(null);
+    } finally {
+      setCarregando(false);
+    }
+
     if (qrTimeoutRef.current) clearTimeout(qrTimeoutRef.current);
     qrTimeoutRef.current = setTimeout(() => {
       if (!canceladoRef.current && !conectadoRef.current) gerarQr();
@@ -56,7 +75,7 @@ export function QrConexaoInline({ instancia, linkPareamentoToken, onConectado, o
 
     async function verificarStatus() {
       if (conectadoRef.current) return;
-      const { data, error } = await supabase.functions.invoke("gozap-status-pareamento", {
+      const { data, error } = await supabase.functions.invoke("wasender-status-pareamento", {
         body: { linkToken: linkPareamentoToken },
       });
       if (canceladoRef.current || error || data?.erro) return;
@@ -116,13 +135,13 @@ export function QrConexaoInline({ instancia, linkPareamentoToken, onConectado, o
             Tentar de novo
           </button>
         </div>
-      ) : carregando && !qrCode ? (
+      ) : carregando && !qrImagem ? (
         <div className="border border-dashed border-brand-border rounded-md p-8 text-center text-sm text-brand-muted mb-4">
           Gerando QR code...
         </div>
-      ) : qrCode ? (
+      ) : qrImagem ? (
         <div className="rounded-md p-4 bg-white mb-4">
-          <img src={qrCode} alt="QR Code para conectar o WhatsApp" className="mx-auto w-56 h-56" />
+          <img src={qrImagem} alt="QR Code para conectar o WhatsApp" className="mx-auto w-56 h-56" />
         </div>
       ) : null}
 

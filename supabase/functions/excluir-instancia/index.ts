@@ -1,14 +1,15 @@
-// Ablaw IA — Edge Function de exclusão de instância (provedor GoZAP).
+// Ablaw IA — Edge Function de exclusão de instância (provedor WaSender).
 //
-// Remove a instância real no GoZAP e, em seguida, o registro no banco
+// Remove a sessão real na WaSender e, em seguida, o registro no banco
 // (instância + configuração de IA + credenciais de conexão, via cascade). Se
-// o GoZAP retornar um erro, a exclusão é abortada e nada é removido do banco
-// — para nunca deixar o painel dizendo que a instância sumiu enquanto ela
-// ainda existe de verdade no GoZAP.
+// a WaSender retornar um erro, a exclusão é abortada e nada é removido do
+// banco — para nunca deixar o painel dizendo que a instância sumiu enquanto
+// ela ainda existe de verdade na WaSender.
 
 import { createClient } from "jsr:@supabase/supabase-js@2";
 
-const GOZAP_API_URL = Deno.env.get("GOZAP_API_URL");
+const WASENDER_API_URL = Deno.env.get("WASENDER_API_URL");
+const WASENDER_PERSONAL_ACCESS_TOKEN = Deno.env.get("WASENDER_PERSONAL_ACCESS_TOKEN");
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
 const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY");
 
@@ -34,9 +35,9 @@ Deno.serve(async (req) => {
     return jsonResponse({ erro: "Método não permitido" }, 405);
   }
 
-  if (!GOZAP_API_URL) {
+  if (!WASENDER_API_URL || !WASENDER_PERSONAL_ACCESS_TOKEN) {
     return jsonResponse(
-      { erro: "GOZAP_NAO_CONFIGURADA: variáveis de ambiente do GoZAP ausentes" },
+      { erro: "WASENDER_NAO_CONFIGURADA: variáveis de ambiente da WaSender ausentes" },
       500
     );
   }
@@ -68,24 +69,24 @@ Deno.serve(async (req) => {
   }
 
   const { data: credenciais, error: credenciaisError } = await supabase
-    .rpc("obter_credenciais_gozap", { p_instancia_id: id })
+    .rpc("obter_credenciais_wasender", { p_instancia_id: id })
     .single();
 
   if (credenciaisError || !credenciais) {
     return jsonResponse({ erro: "Instância não encontrada ou sem credenciais de conexão" }, 404);
   }
 
-  const { gozap_token: gozapToken } = credenciais as { gozap_token: string };
+  const { wasender_session_id: sessionId } = credenciais as { wasender_session_id: number };
 
-  const respostaGozap = await fetch(`${GOZAP_API_URL}/instance`, {
+  const respostaWasender = await fetch(`${WASENDER_API_URL}/api/whatsapp-sessions/${sessionId}`, {
     method: "DELETE",
-    headers: { token: gozapToken },
+    headers: { Authorization: `Bearer ${WASENDER_PERSONAL_ACCESS_TOKEN}` },
   });
 
-  if (!respostaGozap.ok && respostaGozap.status !== 401) {
-    const corpo = await respostaGozap.json().catch(() => null);
+  if (!respostaWasender.ok && respostaWasender.status !== 404) {
+    const corpo = await respostaWasender.json().catch(() => null);
     return jsonResponse(
-      { erro: `GOZAP_EXCLUSAO_FALHOU: HTTP ${respostaGozap.status} - ${JSON.stringify(corpo)}` },
+      { erro: `WASENDER_EXCLUSAO_FALHOU: HTTP ${respostaWasender.status} - ${JSON.stringify(corpo)}` },
       502
     );
   }

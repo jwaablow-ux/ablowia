@@ -27,7 +27,7 @@ export function ExcluirInstanciaModal({ instancia, onFechar, onConfirmar }: Excl
       <div className="bg-brand-surface border border-brand-border rounded-lg shadow-xl w-full max-w-sm p-6">
         <h2 className="text-lg font-semibold mb-1">Excluir instância</h2>
         <p className="text-sm text-brand-muted mb-4">
-          Isso remove <strong>"{instancia.nomeServico}"</strong> da Evolution (desconecta o WhatsApp) e apaga
+          Isso remove <strong>"{instancia.nomeServico}"</strong> da WaSender (desconecta o WhatsApp) e apaga
           permanentemente a configuração de IA associada. Esta ação não pode ser desfeita.
         </p>
         {erro && <p className="text-sm text-red-400 mb-2">{erro}</p>}

@@ -2,7 +2,6 @@ import { useCallback } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "./supabaseClient";
 import type { Instancia } from "../types/instancia";
-import type { MetodoConexao } from "../routes/configuracoes/instancias/CriarInstanciaModal";
 
 export class NomeDuplicadoError extends Error {
   constructor(nomeServico: string) {
@@ -64,15 +63,13 @@ export function useInstancias() {
   const criarInstanciaMutation = useMutation({
     mutationFn: async ({
       nomeServico,
-      connectionMode,
       telefone,
     }: {
       nomeServico: string;
-      connectionMode: MetodoConexao;
       telefone: string;
     }): Promise<ResultadoCriacaoInstancia> => {
       const { data, error } = await supabase.functions.invoke("criar-instancia", {
-        body: { nomeServico, connectionMode, telefone },
+        body: { nomeServico, telefone },
       });
 
       if (error) {
@@ -139,12 +136,8 @@ export function useInstancias() {
   });
 
   const criarInstancia = useCallback(
-    async (
-      nomeServico: string,
-      connectionMode: MetodoConexao,
-      telefone: string
-    ): Promise<ResultadoCriacaoInstancia> => {
-      return criarInstanciaMutation.mutateAsync({ nomeServico, connectionMode, telefone });
+    async (nomeServico: string, telefone: string): Promise<ResultadoCriacaoInstancia> => {
+      return criarInstanciaMutation.mutateAsync({ nomeServico, telefone });
     },
     [criarInstanciaMutation]
   );
