@@ -1,7 +1,7 @@
 import { useCallback } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "./supabaseClient";
-import type { Instancia } from "../types/instancia";
+import type { Instancia, ModoResposta } from "../types/instancia";
 
 export class NomeDuplicadoError extends Error {
   constructor(nomeServico: string) {
@@ -18,7 +18,12 @@ interface InstanciaRow {
   identificador_tecnico: string;
   status_conexao: Instancia["statusConexao"];
   criado_em: string;
-  configuracoes_ia: { nome_ia: string; prompt: string; personalidade: string } | null;
+  configuracoes_ia: {
+    nome_ia: string;
+    prompt: string;
+    personalidade: string;
+    modo_resposta: ModoResposta;
+  } | null;
 }
 
 function mapRow(row: InstanciaRow): Instancia {
@@ -31,6 +36,7 @@ function mapRow(row: InstanciaRow): Instancia {
       nomeIA: row.configuracoes_ia?.nome_ia ?? "",
       prompt: row.configuracoes_ia?.prompt ?? "",
       personalidade: row.configuracoes_ia?.personalidade ?? "",
+      modoResposta: row.configuracoes_ia?.modo_resposta ?? "automatico",
     },
     criadaEm: row.criado_em,
   };
@@ -40,7 +46,7 @@ async function fetchInstancias(): Promise<Instancia[]> {
   const { data, error } = await supabase
     .from("instancias")
     .select(
-      "id, nome_servico, identificador_tecnico, status_conexao, criado_em, configuracoes_ia(nome_ia, prompt, personalidade)"
+      "id, nome_servico, identificador_tecnico, status_conexao, criado_em, configuracoes_ia(nome_ia, prompt, personalidade, modo_resposta)"
     )
     .order("criado_em", { ascending: true });
 
@@ -121,15 +127,23 @@ export function useInstancias() {
       nomeIA,
       prompt,
       personalidade,
+      modoResposta,
     }: {
       id: string;
       nomeIA: string;
       prompt: string;
       personalidade: string;
+      modoResposta: ModoResposta;
     }) => {
       const { error } = await supabase
         .from("configuracoes_ia")
-        .update({ nome_ia: nomeIA, prompt, personalidade, atualizado_em: new Date().toISOString() })
+        .update({
+          nome_ia: nomeIA,
+          prompt,
+          personalidade,
+          modo_resposta: modoResposta,
+          atualizado_em: new Date().toISOString(),
+        })
         .eq("instancia_id", id);
       if (error) throw error;
     },
@@ -146,8 +160,8 @@ export function useInstancias() {
   );
 
   const editarConfiguracaoIA = useCallback(
-    (id: string, nomeIA: string, prompt: string, personalidade: string) => {
-      editarConfiguracaoIAMutation.mutate({ id, nomeIA, prompt, personalidade });
+    (id: string, nomeIA: string, prompt: string, personalidade: string, modoResposta: ModoResposta) => {
+      editarConfiguracaoIAMutation.mutate({ id, nomeIA, prompt, personalidade, modoResposta });
     },
     [editarConfiguracaoIAMutation]
   );

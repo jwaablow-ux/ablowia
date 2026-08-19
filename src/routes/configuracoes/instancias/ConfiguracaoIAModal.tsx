@@ -1,20 +1,31 @@
 import { useState } from "react";
-import type { Instancia } from "../../../types/instancia";
+import type { Instancia, ModoResposta } from "../../../types/instancia";
 
 interface ConfiguracaoIAModalProps {
   instancia: Instancia;
   onFechar: () => void;
-  onSalvar: (id: string, nomeIA: string, prompt: string, personalidade: string) => void;
+  onSalvar: (id: string, nomeIA: string, prompt: string, personalidade: string, modoResposta: ModoResposta) => void;
 }
+
+const OPCOES_MODO_RESPOSTA: { valor: ModoResposta; rotulo: string; descricao: string }[] = [
+  {
+    valor: "automatico",
+    rotulo: "Automático",
+    descricao: "Responde no mesmo formato que a pessoa mandou — texto vira texto, áudio vira áudio.",
+  },
+  { valor: "texto", rotulo: "Sempre texto", descricao: "Responde sempre em texto, mesmo que a pessoa mande áudio." },
+  { valor: "audio", rotulo: "Sempre áudio", descricao: "Responde sempre em áudio, mesmo que a pessoa mande texto." },
+];
 
 export function ConfiguracaoIAModal({ instancia, onFechar, onSalvar }: ConfiguracaoIAModalProps) {
   const [nomeIA, setNomeIA] = useState(instancia.configuracaoIA.nomeIA);
   const [prompt, setPrompt] = useState(instancia.configuracaoIA.prompt);
   const [personalidade, setPersonalidade] = useState(instancia.configuracaoIA.personalidade);
+  const [modoResposta, setModoResposta] = useState<ModoResposta>(instancia.configuracaoIA.modoResposta);
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    onSalvar(instancia.id, nomeIA, prompt, personalidade);
+    onSalvar(instancia.id, nomeIA, prompt, personalidade, modoResposta);
     onFechar();
   }
 
@@ -55,6 +66,32 @@ export function ConfiguracaoIAModal({ instancia, onFechar, onSalvar }: Configura
               placeholder="Ex: Objetiva e acolhedora"
               className="w-full rounded-md border border-brand-border bg-brand-bg px-3 py-2 text-sm focus:outline-none focus:border-brand-accent"
             />
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-2">Como ela responde no WhatsApp</label>
+            <div className="flex flex-col gap-2">
+              {OPCOES_MODO_RESPOSTA.map((opcao) => (
+                <label
+                  key={opcao.valor}
+                  className={`flex items-start gap-2 rounded-md border px-3 py-2 cursor-pointer text-sm ${
+                    modoResposta === opcao.valor ? "border-brand-accent" : "border-brand-border"
+                  }`}
+                >
+                  <input
+                    type="radio"
+                    name="modoResposta"
+                    checked={modoResposta === opcao.valor}
+                    onChange={() => setModoResposta(opcao.valor)}
+                    className="mt-0.5"
+                  />
+                  <span>
+                    <span className="font-medium">{opcao.rotulo}</span>
+                    <br />
+                    <span className="text-xs text-brand-muted">{opcao.descricao}</span>
+                  </span>
+                </label>
+              ))}
+            </div>
           </div>
           <div>
             <label className="block text-sm font-medium mb-1" htmlFor="prompt">

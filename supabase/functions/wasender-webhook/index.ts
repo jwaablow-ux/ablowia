@@ -203,7 +203,7 @@ Deno.serve(async (req) => {
   const [{ data: instancia }, { data: conexao }, { data: configGlobal }] = await Promise.all([
     supabase
       .from("instancias")
-      .select("id, status_conexao, configuracoes_ia(nome_ia, prompt, personalidade)")
+      .select("id, status_conexao, configuracoes_ia(nome_ia, prompt, personalidade, modo_resposta)")
       .eq("id", instanciaId)
       .single(),
     supabase
@@ -220,8 +220,16 @@ Deno.serve(async (req) => {
 
   const apiKey = conexao.wasender_api_key as string;
   const configIA = (instancia as unknown as {
-    configuracoes_ia: { nome_ia: string; prompt: string; personalidade: string } | null;
+    configuracoes_ia: {
+      nome_ia: string;
+      prompt: string;
+      personalidade: string;
+      modo_resposta: "automatico" | "texto" | "audio";
+    } | null;
   }).configuracoes_ia;
+
+  const modoResposta = configIA?.modo_resposta ?? "automatico";
+  const respondeEmAudio = modoResposta === "audio" || (modoResposta === "automatico" && ehAudio);
 
   try {
     let mensagemUsuario = corpoTexto ?? "";
@@ -245,7 +253,7 @@ Deno.serve(async (req) => {
 
     if (!textoResposta) return jsonResponse({ ok: true }, 200);
 
-    if (ehAudio) {
+    if (respondeEmAudio) {
       const audioBlob = await gerarAudioResposta(textoResposta);
       if (audioBlob) {
         const caminho = `${instanciaId}/${crypto.randomUUID()}.mp3`;
