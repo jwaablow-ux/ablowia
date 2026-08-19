@@ -22,11 +22,16 @@ const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
 
 // Voz feminina brasileira, tom suave e profissional, com controle fino de
 // expressão via `instructions` (só o modelo gpt-4o-mini-tts suporta isso).
-const VOZ_TTS = "shimmer";
+const VOZ_TTS = "coral";
 const MODELO_TTS = "gpt-4o-mini-tts";
 const INSTRUCOES_VOZ =
-  "Fale em português do Brasil, de forma extremamente natural, como uma pessoa real. Tom suave, " +
-  "profissional e acolhedor, ritmo calmo, sem soar robótica.";
+  "Voice: warm, friendly Brazilian Portuguese female voice, like a real person casually texting a friend " +
+  "on WhatsApp — not a customer-service agent reading a script. " +
+  "Tone: relaxed, natural, with the small imperfections of real speech (natural pauses, gentle inflection, " +
+  "no robotic evenness). " +
+  "Pacing: conversational speed, not rushed, not overly slow or theatrical. " +
+  "Delivery: never sound like a call-center greeting or a canned response — sound like she genuinely means " +
+  "what she's saying, especially on short replies like a simple hello.";
 
 function jsonResponse(body: unknown, status: number) {
   return new Response(JSON.stringify(body), {
