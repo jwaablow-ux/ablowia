@@ -2,15 +2,15 @@ import { useCallback } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "./supabaseClient";
 
-export interface ModeloClaude {
+export interface ModeloOpenAI {
   id: string;
   rotulo: string;
 }
 
-export const MODELOS_CLAUDE: ModeloClaude[] = [
-  { id: "claude-opus-4-8", rotulo: "Claude Opus 4.8 (mais capaz)" },
-  { id: "claude-sonnet-5", rotulo: "Claude Sonnet 5 (equilibrado)" },
-  { id: "claude-haiku-4-5-20251001", rotulo: "Claude Haiku 4.5 (mais rápido)" },
+export const MODELOS_OPENAI: ModeloOpenAI[] = [
+  { id: "gpt-4.1", rotulo: "GPT-4.1 (mais capaz)" },
+  { id: "gpt-4o", rotulo: "GPT-4o (equilibrado)" },
+  { id: "gpt-4o-mini", rotulo: "GPT-4o mini (mais rápido)" },
 ];
 
 async function fetchConfiguracao(): Promise<string> {

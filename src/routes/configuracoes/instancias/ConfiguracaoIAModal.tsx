@@ -4,29 +4,45 @@ import type { Instancia } from "../../../types/instancia";
 interface ConfiguracaoIAModalProps {
   instancia: Instancia;
   onFechar: () => void;
-  onSalvar: (id: string, prompt: string, personalidade: string) => void;
+  onSalvar: (id: string, nomeIA: string, prompt: string, personalidade: string) => void;
 }
 
 export function ConfiguracaoIAModal({ instancia, onFechar, onSalvar }: ConfiguracaoIAModalProps) {
+  const [nomeIA, setNomeIA] = useState(instancia.configuracaoIA.nomeIA);
   const [prompt, setPrompt] = useState(instancia.configuracaoIA.prompt);
   const [personalidade, setPersonalidade] = useState(instancia.configuracaoIA.personalidade);
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    onSalvar(instancia.id, prompt, personalidade);
+    onSalvar(instancia.id, nomeIA, prompt, personalidade);
     onFechar();
   }
 
   return (
     <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
-      <div className="bg-brand-surface border border-brand-border rounded-lg shadow-xl w-full max-w-md p-6">
+      <div className="bg-brand-surface border border-brand-border rounded-lg shadow-xl w-full max-w-2xl p-6">
         <h2 className="text-lg font-semibold mb-1">
           Configuração de IA — {instancia.nomeServico}
         </h2>
         <p className="text-sm text-brand-muted mb-4">
-          Esta configuração é exclusiva desta instância e nunca é compartilhada com outras.
+          Esta configuração é exclusiva desta instância e nunca é compartilhada com outras. Todas as
+          instâncias já compartilham um conhecimento jurídico geral (Cível, Trabalhista, Criminal e
+          Empresarial) — aqui você define o nome, a personalidade e a especialização desta em particular.
         </p>
         <form onSubmit={handleSubmit} className="flex flex-col gap-3">
+          <div>
+            <label className="block text-sm font-medium mb-1" htmlFor="nomeIA">
+              Nome da IA
+            </label>
+            <input
+              id="nomeIA"
+              type="text"
+              value={nomeIA}
+              onChange={(e) => setNomeIA(e.target.value)}
+              placeholder="Ex: Sofia"
+              className="w-full rounded-md border border-brand-border bg-brand-bg px-3 py-2 text-sm focus:outline-none focus:border-brand-accent"
+            />
+          </div>
           <div>
             <label className="block text-sm font-medium mb-1" htmlFor="personalidade">
               Personalidade
@@ -42,15 +58,15 @@ export function ConfiguracaoIAModal({ instancia, onFechar, onSalvar }: Configura
           </div>
           <div>
             <label className="block text-sm font-medium mb-1" htmlFor="prompt">
-              Prompt
+              Especialização e regras de atuação
             </label>
             <textarea
               id="prompt"
-              rows={5}
+              rows={16}
               value={prompt}
               onChange={(e) => setPrompt(e.target.value)}
-              placeholder="Instruções para a IA desta instância"
-              className="w-full rounded-md border border-brand-border bg-brand-bg px-3 py-2 text-sm focus:outline-none focus:border-brand-accent"
+              placeholder="Ex: Esta instância atende exclusivamente casos de Direito Trabalhista. Foque em..."
+              className="w-full rounded-md border border-brand-border bg-brand-bg px-3 py-2 text-sm font-mono focus:outline-none focus:border-brand-accent resize-y"
             />
           </div>
           <div className="flex justify-end gap-2 mt-2">

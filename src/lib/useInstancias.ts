@@ -18,7 +18,7 @@ interface InstanciaRow {
   identificador_tecnico: string;
   status_conexao: Instancia["statusConexao"];
   criado_em: string;
-  configuracoes_ia: { prompt: string; personalidade: string } | null;
+  configuracoes_ia: { nome_ia: string; prompt: string; personalidade: string } | null;
 }
 
 function mapRow(row: InstanciaRow): Instancia {
@@ -28,6 +28,7 @@ function mapRow(row: InstanciaRow): Instancia {
     identificadorTecnico: row.identificador_tecnico,
     statusConexao: row.status_conexao,
     configuracaoIA: {
+      nomeIA: row.configuracoes_ia?.nome_ia ?? "",
       prompt: row.configuracoes_ia?.prompt ?? "",
       personalidade: row.configuracoes_ia?.personalidade ?? "",
     },
@@ -39,7 +40,7 @@ async function fetchInstancias(): Promise<Instancia[]> {
   const { data, error } = await supabase
     .from("instancias")
     .select(
-      "id, nome_servico, identificador_tecnico, status_conexao, criado_em, configuracoes_ia(prompt, personalidade)"
+      "id, nome_servico, identificador_tecnico, status_conexao, criado_em, configuracoes_ia(nome_ia, prompt, personalidade)"
     )
     .order("criado_em", { ascending: true });
 
@@ -117,16 +118,18 @@ export function useInstancias() {
   const editarConfiguracaoIAMutation = useMutation({
     mutationFn: async ({
       id,
+      nomeIA,
       prompt,
       personalidade,
     }: {
       id: string;
+      nomeIA: string;
       prompt: string;
       personalidade: string;
     }) => {
       const { error } = await supabase
         .from("configuracoes_ia")
-        .update({ prompt, personalidade, atualizado_em: new Date().toISOString() })
+        .update({ nome_ia: nomeIA, prompt, personalidade, atualizado_em: new Date().toISOString() })
         .eq("instancia_id", id);
       if (error) throw error;
     },
@@ -143,8 +146,8 @@ export function useInstancias() {
   );
 
   const editarConfiguracaoIA = useCallback(
-    (id: string, prompt: string, personalidade: string) => {
-      editarConfiguracaoIAMutation.mutate({ id, prompt, personalidade });
+    (id: string, nomeIA: string, prompt: string, personalidade: string) => {
+      editarConfiguracaoIAMutation.mutate({ id, nomeIA, prompt, personalidade });
     },
     [editarConfiguracaoIAMutation]
   );

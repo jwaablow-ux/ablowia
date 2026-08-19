@@ -92,6 +92,27 @@ async function removerSessaoNaWasender(sessionId: number) {
   });
 }
 
+// Aponta o webhook da sessão pra Edge Function que faz a IA responder,
+// já identificando a instância pela query string — sem isso a WaSender
+// nunca chamaria wasender-webhook e a IA nunca responderia no WhatsApp.
+// Best-effort: se falhar, a instância continua funcional, só sem resposta
+// automática até alguém configurar o webhook manualmente.
+async function configurarWebhook(sessionId: number, instanciaId: string) {
+  const webhookUrl = `${SUPABASE_URL}/functions/v1/wasender-webhook?instancia=${instanciaId}`;
+  await fetch(`${WASENDER_API_URL}/api/whatsapp-sessions/${sessionId}`, {
+    method: "PUT",
+    headers: {
+      Authorization: `Bearer ${WASENDER_PERSONAL_ACCESS_TOKEN}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      webhook_url: webhookUrl,
+      webhook_enabled: true,
+      webhook_events: ["messages.received"],
+    }),
+  }).catch(() => {});
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { status: 204, headers: corsHeaders });
@@ -188,6 +209,8 @@ Deno.serve(async (req) => {
       500
     );
   }
+
+  await configurarWebhook(respostaWasender.data.id, (instancia as { id: string }).id);
 
   return jsonResponse(
     {

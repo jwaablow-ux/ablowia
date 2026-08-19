@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { MODELOS_CLAUDE, useConfiguracaoIAGlobal } from "../../../lib/useConfiguracaoIAGlobal";
+import { MODELOS_OPENAI, useConfiguracaoIAGlobal } from "../../../lib/useConfiguracaoIAGlobal";
 
 export function ModeloIAPage() {
   const { modeloAtual, carregando, erro, salvarModelo, testarConexao } = useConfiguracaoIAGlobal();
@@ -45,9 +45,8 @@ export function ModeloIAPage() {
     <div className="p-4 sm:p-6 lg:p-8">
       <h1 className="text-xl font-semibold mb-2">Modelo de IA</h1>
       <p className="text-sm text-brand-muted mb-6 max-w-xl">
-        Escolha o modelo Claude (Anthropic) que será usado universalmente pelo Ablaw IA. A conexão com a
-        Anthropic já está ativa; a ligação deste modelo com o atendimento real via WhatsApp ainda não foi
-        construída.
+        Escolha o modelo OpenAI que será usado universalmente pelo Ablaw IA. Esse modelo é o motor real do
+        atendimento via WhatsApp.
       </p>
 
       {carregando ? (
@@ -71,7 +70,7 @@ export function ModeloIAPage() {
             }}
             className="w-full rounded-md border border-brand-border bg-brand-bg px-3 py-2 text-sm mb-4 focus:outline-none focus:border-brand-accent"
           >
-            {MODELOS_CLAUDE.map((m) => (
+            {MODELOS_OPENAI.map((m) => (
               <option key={m.id} value={m.id}>
                 {m.rotulo}
               </option>
